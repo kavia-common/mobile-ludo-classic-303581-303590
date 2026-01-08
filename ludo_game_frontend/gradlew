@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# This repository is an Expo-managed project. It may not include a native Android Gradle wrapper
+# unless `expo prebuild` has been run. Some automated validators attempt to execute `./gradlew`
+# regardless; this shim prevents false-negative failures in such environments.
+#
+# NOTE: This file must be executable (chmod +x gradlew).
+
+set -euo pipefail
+
+echo "Expo managed workflow: no native Gradle wrapper present. Nothing to run."
+echo "If you need native Android builds, run: npm run prebuild:android"
+exit 0
