@@ -17,6 +17,7 @@ import { advanceTurn, canRollDice, createInitialGameState, withDiceValue, applyM
 import { OceanTheme } from "./src/theme";
 import type { GameState, PlayerConfig, PlayerId, MoveOption } from "./src/game/types";
 import { clearSavedGame, loadGame, saveGame } from "./src/storage/gameStorage";
+import { hapticTap, initFeedback, playSound, unloadFeedback } from "./src/utils/feedback";
 
 const DEFAULT_PLAYERS: PlayerConfig[] = [
   { id: "red", name: "Red", color: OceanTheme.colors.playerRed, isActive: true },
@@ -40,6 +41,12 @@ export default function App() {
 
   React.useEffect(() => {
     let mounted = true;
+
+    // Best-effort: preload sound effects + prep haptics. No-op on unsupported platforms.
+    initFeedback().catch(() => {
+      // ignore init errors
+    });
+
     (async () => {
       try {
         const saved = await loadGame();
@@ -50,8 +57,12 @@ export default function App() {
         if (mounted) setLoadingRestore(false);
       }
     })();
+
     return () => {
       mounted = false;
+      unloadFeedback().catch(() => {
+        // ignore cleanup errors
+      });
     };
   }, []);
 
@@ -101,6 +112,14 @@ export default function App() {
     if (!game) return;
     if (!canRollDice(game)) return;
 
+    // Immediate tactile + sound feedback.
+    hapticTap("light").catch(() => {
+      // ignore
+    });
+    playSound("dice").catch(() => {
+      // ignore
+    });
+
     // Mark rolling for UX; then set value after short delay.
     setGame((g) => (g ? { ...g, dice: { ...g.dice, isRolling: true } } : g));
     const val = randomDice();
@@ -118,6 +137,25 @@ export default function App() {
   const onSelectMove = React.useCallback(
     (move: MoveOption) => {
       if (!game) return;
+
+      // Feedback based on move type.
+      const isCapture = move.captures.length > 0;
+      if (isCapture) {
+        hapticTap("warning").catch(() => {
+          // ignore
+        });
+        playSound("capture").catch(() => {
+          // ignore
+        });
+      } else {
+        hapticTap("medium").catch(() => {
+          // ignore
+        });
+        playSound("move").catch(() => {
+          // ignore
+        });
+      }
+
       const prevDice = game.dice.value;
 
       const nextAfterMove = applyMove(game, move);
